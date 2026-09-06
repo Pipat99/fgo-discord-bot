@@ -72,15 +72,17 @@ def _call_gemini(prompt: str) -> str:
     last_error = None
 
     for model_name in candidate_models:
-        try:
-            chat = ai_client.chats.create(model=model_name)
-            res = chat.send_message(prompt)
-            if res.text:
-                return res.text
-        except Exception as e:
-            last_error = e
-            print(f"Model {model_name} failed: {e}. Trying next model...")
-            continue
+        for attempt in range(2):
+            try:
+                chat = ai_client.chats.create(model=model_name)
+                res = chat.send_message(prompt)
+                if res.text:
+                    return res.text
+            except Exception as e:
+                last_error = e
+                print(f"Model {model_name} failed (attempt {attempt + 1}): {e}")
+                time.sleep(2)
+                continue
 
     if last_error:
         raise last_error
@@ -249,7 +251,15 @@ Answer clearly in Thai."""
 
     try:
         raw_answer = await asyncio.to_thread(_call_gemini, prompt)
-        
+    except Exception as e:
+        import traceback
+        print(f"Error in /fgo: {e}")
+        print(f"Error detail: {e}")
+        traceback.print_exc()
+        await interaction.edit_original_response(content="เซิร์ฟเวอร์ AI ไม่ว่างชั่วคราว (503) กรุณาลองใหม่อีกครั้งในอีกสักครู่")
+        return
+
+    try:
         # แยกส่วนข้อความตามแท็ก
         jp_text = "ไม่มีข้อมูล"
         na_text = "ไม่มีข้อมูล"
