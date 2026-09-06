@@ -68,7 +68,7 @@ def fetch_servant_gacha_history(servant_id: int):
         return []
 
 def _call_gemini(prompt: str) -> str:
-    candidate_models = ["gemini-3.6-flash"]
+    candidate_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.6-flash"]
     
     for model_name in candidate_models:
         for attempt in range(2):
