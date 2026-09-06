@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 from google import genai
+from aiohttp import web
 
 load_dotenv()
 
@@ -102,8 +103,21 @@ Output ONLY the resolved official English name without explanation or punctuatio
     except Exception:
         return query
 
+async def handle_health_check(request):
+    return web.Response(text="Bot is alive!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle_health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.getenv("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
 @bot.event
 async def on_ready():
+    await start_web_server()
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
