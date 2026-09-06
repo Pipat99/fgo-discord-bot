@@ -73,14 +73,15 @@ def _call_gemini(prompt: str) -> str:
     for model_name in candidate_models:
         for attempt in range(2):
             try:
-                res = ai_client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
-                )
+                chat = ai_client.chats.create(model=model_name)
+                res = chat.send_message(prompt)
                 if res.text:
                     return res.text
             except Exception as e:
+                import traceback
                 print(f"[AI Error] Model {model_name} (Attempt {attempt + 1}) failed: {e}")
+                print(f"Error detail: {e}")
+                traceback.print_exc()
                 time.sleep(1)
                 continue
                 
@@ -302,7 +303,10 @@ Answer clearly in Thai."""
         await interaction.followup.send(embed=embed)
 
     except Exception as e:
+        import traceback
         print(f"Error in /fgo: {e}")
+        print(f"Error detail: {e}")
+        traceback.print_exc()
         await interaction.followup.send(f"❌ เกิดข้อผิดพลาด: {e}")
 
 bot.run(DISCORD_TOKEN)
