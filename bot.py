@@ -69,22 +69,21 @@ def fetch_servant_gacha_history(servant_id: int):
 
 def _call_gemini(prompt: str) -> str:
     candidate_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.6-flash"]
-    
+    last_error = None
+
     for model_name in candidate_models:
-        for attempt in range(2):
-            try:
-                chat = ai_client.chats.create(model=model_name)
-                res = chat.send_message(prompt)
-                if res.text:
-                    return res.text
-            except Exception as e:
-                import traceback
-                print(f"[AI Error] Model {model_name} (Attempt {attempt + 1}) failed: {e}")
-                print(f"Error detail: {e}")
-                traceback.print_exc()
-                time.sleep(1)
-                continue
-                
+        try:
+            chat = ai_client.chats.create(model=model_name)
+            res = chat.send_message(prompt)
+            if res.text:
+                return res.text
+        except Exception as e:
+            last_error = e
+            print(f"Model {model_name} failed: {e}. Trying next model...")
+            continue
+
+    if last_error:
+        raise last_error
     return "ขออภัย ระบบ AI กำลังมีผู้ใช้งานหนาแน่นชั่วคราว กรุณาลองใหม่อีกครั้งในอีกสักครู่"
 
 def resolve_servant_name(query: str) -> str:
