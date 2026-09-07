@@ -9,6 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from google import genai
 from aiohttp import web
+from tools import pick_one, split_teams
 
 load_dotenv()
 
@@ -60,9 +61,7 @@ def fetch_servant_gacha_history(servant_id: int):
             return []
         data = resp.json()
         matched_banners = []
-        # ดึงประวัติตู้และอีเวนต์ที่เกี่ยวข้องจากข้อมูล Servant โดยตรง
         rel_quests = data.get("relateQuest", [])
-        # หากไม่มี relateQuest ให้ fallback เป็นข้อมูล release date พื้นฐาน
         return matched_banners
     except Exception:
         return []
@@ -207,7 +206,6 @@ async def fgo_slash(interaction: discord.Interaction, question: str):
     
     current_date_str = datetime.now().strftime("%B %Y")
     
-    # พยายามค้นหา Servant จากคำถามเพื่อเอารูปและ Class
     servant_name = resolve_servant_name(question)
     servant_info = fetch_servant_data(servant_name) if servant_name else None
     
@@ -260,7 +258,6 @@ Answer clearly in Thai."""
         return
 
     try:
-        # แยกส่วนข้อความตามแท็ก
         jp_text = "ไม่มีข้อมูล"
         na_text = "ไม่มีข้อมูล"
         advice_text = "ไม่มีคำแนะนำเพิ่มเติม"
@@ -317,5 +314,15 @@ Answer clearly in Thai."""
         print(f"Error detail: {e}")
         traceback.print_exc()
         await interaction.followup.send(f"❌ เกิดข้อผิดพลาด: {e}")
+
+@bot.tree.command(name="pick", description="สุ่มเลือก 1 รายการ")
+@app_commands.describe(items="ข้อความหรือรายการที่ต้องการสุ่ม")
+async def pick_slash(interaction: discord.Interaction, items: str):
+    await interaction.response.send_message(pick_one(items))
+
+@bot.tree.command(name="split", description="สุ่มแบ่งข้อมูลออกเป็น 2 ทีม")
+@app_commands.describe(items="ข้อความหรือรายชื่อที่ต้องการแบ่งทีม")
+async def split_slash(interaction: discord.Interaction, items: str):
+    await interaction.response.send_message(split_teams(items))
 
 bot.run(DISCORD_TOKEN)
